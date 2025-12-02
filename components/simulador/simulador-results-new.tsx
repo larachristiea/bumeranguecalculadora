@@ -169,12 +169,6 @@ export default function SimuladorResultsNew({ data, onBack }: any) {
             <p className="text-lg text-gray-300">{dadosPadronizados.nomeEmpresa}</p>
           </motion.div>
 
-          {/* Botão PDF */}
-          <motion.div {...{ initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { delay: 0.2 } }} className="mb-8 flex justify-center no-print">
-            <Button onClick={gerarPDF} className="bg-gradient-to-r from-[#4527A0] to-[#9CDD00] hover:opacity-90 text-white font-bold px-8 py-3">
-              📄 Gerar PDF do Relatório
-            </Button>
-          </motion.div>
 
           {/* Cards de Comparação */}
           <motion.div {...{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { delay: 0.3 } }} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
@@ -335,6 +329,12 @@ export default function SimuladorResultsNew({ data, onBack }: any) {
           {/* Botões Ação */}
           <motion.div {...{ initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { delay: 0.9 } }} className="flex flex-col sm:flex-row gap-4 justify-center mb-10 no-print">
             <Button onClick={onBack} variant="outline" className="px-8 py-3 bg-white/10 border-white/20">← Voltar</Button>
+            <Button
+              onClick={gerarPDF}
+              className="px-8 py-3 bg-gradient-to-r from-[#4527A0] to-[#9CDD00] hover:opacity-90"
+            >
+              📄 Gerar PDF do Relatório
+            </Button>
             <Button
               onClick={() => window.open(`https://wa.me/5533999160008?text=${encodeURIComponent('Olá! Gostaria de falar sobre a simulação da Reforma Tributária para ' + dadosPadronizados.nomeEmpresa)}`, '_blank')}
               className="px-8 py-3 bg-gradient-to-r from-[#4527A0] to-[#9CDD00] hover:opacity-90"
