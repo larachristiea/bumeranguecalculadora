@@ -10,6 +10,7 @@ import { calcularSistemaAtual, calcularNovoSistema } from "@/lib/simulador-calcu
 import { formatarMoeda, parseMoeda } from "@/lib/simulador-utils"
 import { FloatingPaper } from "@/components/floating-paper"
 import { LogoAnimation } from "@/components/logo-animation"
+import { salvarSimulacao } from "@/lib/supabase"
 
 interface FormData {
   nomeEmpresa: string
@@ -131,6 +132,49 @@ export default function SimuladorForm() {
         formData.percentualCreditos,
         formData.aliquotaCBS,
         formData.aliquotaIBS,
+      )
+
+      // Salvar no Supabase
+      const economia = sistemaAtual.total - sistemaNovo.total
+      const economiaPercentual = ((economia / sistemaAtual.total) * 100)
+
+      await salvarSimulacao(
+        {
+          nome_empresa: formData.nomeEmpresa,
+          cnpj: formData.cnpj,
+          cpf_responsavel: formData.cpfSocio,
+          telefone: formData.telefone,
+          email: formData.email,
+          estado: formData.estado,
+          regime_tributario: formData.regimeTributario,
+          setor: formData.setor,
+          receita_bruta_anual: Math.round(formData.receitaBruta * 100),
+          custos_operacionais: Math.round(formData.custosAnuais * 100),
+          setor_especifico: formData.setorEspecifico,
+          percentual_creditos: formData.percentualCreditos,
+          aliquota_cbs: formData.aliquotaCBS,
+          aliquota_ibs: formData.aliquotaIBS,
+        },
+        {
+          sistema_atual_base: Math.round(sistemaAtual.base * 100),
+          sistema_atual_irpj: Math.round(sistemaAtual.irpj * 100),
+          sistema_atual_csll: Math.round(sistemaAtual.csll * 100),
+          sistema_atual_pis: Math.round(sistemaAtual.pis * 100),
+          sistema_atual_cofins: Math.round(sistemaAtual.cofins * 100),
+          sistema_atual_icms: Math.round(sistemaAtual.icms * 100),
+          sistema_atual_iss: Math.round(sistemaAtual.iss * 100),
+          sistema_atual_total: Math.round(sistemaAtual.total * 100),
+          sistema_novo_base: Math.round(sistemaNovo.base * 100),
+          sistema_novo_creditos: Math.round(sistemaNovo.creditos * 100),
+          sistema_novo_cbs: Math.round(sistemaNovo.cbs * 100),
+          sistema_novo_ibs: Math.round(sistemaNovo.ibs * 100),
+          sistema_novo_total: Math.round(sistemaNovo.total * 100),
+          setor_especifico_aplicado: formData.setorEspecifico,
+          aliquota_efetiva: formData.aliquotaCBS + formData.aliquotaIBS,
+          reducao_percentual: economiaPercentual,
+          economia_valor: Math.round(economia * 100),
+          economia_percentual: economiaPercentual,
+        }
       )
 
       setResults({
