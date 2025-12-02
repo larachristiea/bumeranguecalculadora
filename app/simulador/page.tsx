@@ -3,8 +3,8 @@ import Footer from "@/components/footer"
 import SimuladorForm from "@/components/simulador/simulador-form"
 
 export const metadata = {
-  title: "Simulador Reforma Tributária CJL - Bumerangue",
-  description: "Simule o impacto da reforma tributária CJL na sua empresa com CBS e IBS",
+  title: "Simulador Reforma Tributária - Bumerangue",
+  description: "Simule o impacto da reforma tributária na sua empresa com CBS e IBS",
 }
 
 export default function SimuladorPage() {
