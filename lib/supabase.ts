@@ -1,9 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Criar cliente apenas se as credenciais existirem
+export const supabase = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null
 
 // Tipos para o banco
 export interface Cliente {
@@ -62,6 +65,12 @@ export async function salvarSimulacao(
   dadosCliente: Omit<Cliente, 'id' | 'created_at'>,
   dadosResultado: Omit<ResultadoSimulacao, 'id' | 'created_at' | 'cliente_id'>
 ) {
+  // Se o Supabase não estiver configurado, retorna sucesso sem salvar
+  if (!supabase) {
+    console.warn('Supabase não configurado. Dados não foram salvos.')
+    return { sucesso: true, aviso: 'Supabase não configurado' }
+  }
+
   try {
     // 1. Salvar cliente
     const { data: cliente, error: erroCliente } = await supabase
