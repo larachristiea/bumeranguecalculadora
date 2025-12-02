@@ -211,19 +211,10 @@ export default function SimuladorForm() {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12 relative">
-            {/* Logo como marca d'água */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none overflow-hidden">
-              <img
-                src="/images/bumerangue_icon.png"
-                alt=""
-                className="w-64 h-64 md:w-96 md:h-96 object-contain"
-              />
-            </div>
-
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-[#9CDD00] relative z-10">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-[#9CDD00]">
               SIMULADOR BUMERANGUE<br />DA REFORMA TRIBUTÁRIA
             </h1>
-            <p className="text-lg text-muted-foreground relative z-10">Simulação Completa CBS + IBS - LC 214/2025</p>
+            <p className="text-lg text-muted-foreground">Simulação Completa CBS + IBS - LC 214/2025</p>
           </div>
 
           {/* Intro Section */}
