@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Reforma Tributária - Bumerangue | LC 214/2025</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #000000;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 30px 30px;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 40px 20px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: 800;
+        }
+
+        .header .subtitle {
+            font-size: 1.3em;
+            opacity: 0.95;
+            margin-bottom: 10px;
+        }
+
+        .header .tag {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            backdrop-filter: blur(10px);
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+
+        .card h2 {
+            color: #4527A0;
+            margin-bottom: 25px;
+            font-size: 1.9em;
+            font-weight: 700;
+            border-bottom: 3px solid #4527A0;
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .form-group label .required {
+            color: #e74c3c;
+            margin-left: 3px;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4527A0;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group small {
+            margin-top: 6px;
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .input-icon {
+            position: relative;
+        }
+
+        .input-icon input {
+            padding-left: 40px;
+        }
+
+        .input-icon::before {
+            content: 'R$';
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #4527A0;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 18px;
+            background: #9CDD00; /* Verde limão Bumerangue */
+            color: #000000; /* Texto preto */
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 20px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(156, 221, 0, 0.5);
+            background: #8cc700; /* Verde mais escuro no hover */
+        }
+
+        .btn-primary:active {
+            transform: translateY(-1px);
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: #4527A0;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .stat-card.highlight {
+            background: linear-gradient(135deg, #4527A0 0%, #9CDD00 100%);
+            color: white;
+        }
+
+        .stat-card.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .stat-card.danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+
+        .stat-card h3 {
+            font-size: 0.95em;
+            margin-bottom: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 2.2em;
+            font-weight: 800;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .comparison-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .comparison-box {
+            padding: 30px;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .comparison-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+        }
+
+        .sistema-antigo {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .sistema-novo {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .comparison-box h3 {
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .valor-destaque {
+            font-size: 2.5em;
+            font-weight: 800;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .breakdown {
+            background: rgba(255,255,255,0.15);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            font-size: 1.05em;
+        }
+
+        .breakdown-item:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 1.2em;
+            margin-top: 10px;
+            padding-top: 15px;
+            border-top: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .alert {
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 5px solid;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border-color: #0c5460;
+            color: #0c5460;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .alert h4 {
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .alert ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        .alert li {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+
+        .chart-container {
+            margin: 30px 0;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .chart-container h3 {
+            color: #4527A0;
+            margin-bottom: 25px;
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 300px;
+            padding: 30px;
+            border-bottom: 3px solid #4527A0;
+            position: relative;
+        }
+
+        .bar-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 200px;
+        }
+
+        .bar {
+            width: 100%;
+            background: linear-gradient(to top, #4527A0, #9CDD00);
+            border-radius: 10px 10px 0 0;
+            position: relative;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            min-height: 30px;
+        }
+
+        .bar:hover {
+            opacity: 0.8;
+            transform: scaleY(1.05);
+        }
+
+        .bar-value {
+            position: absolute;
+            top: -35px;
+            width: 100%;
+            text-align: center;
+            font-weight: 800;
+            color: #4527A0;
+            font-size: 1.1em;
+        }
+
+        .bar-label {
+            text-align: center;
+            margin-top: 15px;
+            font-weight: 700;
+            font-size: 1em;
+            color: #333;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .badge-primary {
+            background: #4527A0;
+            color: white;
+        }
+
+        .badge-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .badge-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #4527A0 0%, #9CDD00 100%);
+            color: white;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4527A0 0%, #9CDD00 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.9em;
+            transition: width 1s ease-out;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4527A0;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #f5c6cb;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .comparison-section {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .valor-destaque {
+                font-size: 2em;
+            }
+
+            .stat-value {
+                font-size: 1.8em;
+            }
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #4527A015 0%, #9CDD0015 100%);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 5px solid #4527A0;
+            margin: 20px 0;
+        }
+
+        .info-box h4 {
+            color: #4527A0;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .creditos-section {
+            background: #e8f5e9;
+            padding: 25px;
+            border-radius: 15px;
+            border-left: 5px solid #4caf50;
+            margin: 25px 0;
+        }
+
+        .creditos-section h4 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+
+        .credito-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            background: white;
+            margin: 10px 0;
+            border-radius: 8px;
+            align-items: center;
+        }
+
+        .credito-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .credito-valor {
+            font-size: 1.3em;
+            color: #4caf50;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de partículas animadas -->
+    <canvas id="particles-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;"></canvas>
+
+    <div class="container" style="position: relative; z-index: 1;">
+        <div class="header">
+            <h1 style="background: linear-gradient(to right, #ffffff, #9CDD00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                O que é seu, <span style="color: #9CDD00;">de volta para você</span>
+            </h1>
+            <p class="subtitle">Descubra o impacto da Reforma Tributária LC 214/2025 na sua empresa</p>
+            <span class="tag" style="background: rgba(156, 221, 0, 0.2); border: 1px solid #9CDD00;">
+                ✅ Simulação Completa | CBS + IBS | Com Créditos sobre Insumos
+            </span>
+        </div>
+
+        <div class="card">
+            <h2>📋 Informações da Empresa</h2>
+            <form id="simuladorForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nome da Empresa <span class="required">*</span></label>
+                        <input type="text" id="nomeEmpresa" placeholder="Razão Social" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>CNPJ</label>
+                        <input type="text" id="cnpj" placeholder="00.000.000/0000-00" maxlength="18">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nome do Sócio <span class="required">*</span></label>
+                        <input type="text" id="nomeSocio" placeholder="Nome completo" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>CPF do Sócio <span class="required">*</span></label>
+                        <input type="text" id="cpfSocio" placeholder="000.000.000-00" maxlength="14" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Telefone <span class="required">*</span></label>
+                        <input type="tel" id="telefone" placeholder="(00) 00000-0000" maxlength="15" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email <span class="required">*</span></label>
+                        <input type="email" id="email" placeholder="contato@empresa.com.br" required>
+                    </div>
+                </div>
+
+                <h2 style="margin-top: 30px;">🏢 Dados Tributários</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Regime Tributário Atual <span class="required">*</span></label>
+                        <select id="regimeTributario" required>
+                            <option value="">Selecione</option>
+                            <option value="simples">Simples Nacional</option>
+                            <option value="presumido">Lucro Presumido</option>
+                            <option value="real">Lucro Real</option>
+                        </select>
+                        <small>Regime atual de tributação</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Setor de Atividade <span class="required">*</span></label>
+                        <select id="setor" required>
+                            <option value="">Selecione</option>
+                            <option value="geral">Geral (Alíquota Padrão 26,5%)</option>
+                            <option value="saude">Saúde (Redução 60%)</option>
+                            <option value="educacao">Educação (Redução 60%)</option>
+                            <option value="alimentos">Alimentos Básicos (Redução 60%)</option>
+                            <option value="transporte">Transporte Público (Redução 50%)</option>
+                            <option value="industria">Indústria</option>
+                            <option value="servicos">Serviços</option>
+                            <option value="comercio">Comércio</option>
+                            <option value="tecnologia">Tecnologia (Redução 10%)</option>
+                            <option value="construcao">Construção Civil</option>
+                        </select>
+                        <small>Alguns setores têm benefícios fiscais</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Estado <span class="required">*</span></label>
+                        <select id="estado" required>
+                            <option value="">Selecione</option>
+                            <option value="SP">São Paulo</option>
+                            <option value="RJ">Rio de Janeiro</option>
+                            <option value="MG">Minas Gerais</option>
+                            <option value="RS">Rio Grande do Sul</option>
+                            <option value="PR">Paraná</option>
+                            <option value="SC">Santa Catarina</option>
+                            <option value="BA">Bahia</option>
+                            <option value="PE">Pernambuco</option>
+                            <option value="CE">Ceará</option>
+                            <option value="GO">Goiás</option>
+                            <option value="DF">Distrito Federal</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                        <small>Para cálculo de ICMS no sistema atual</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ano de Transição <span class="required">*</span></label>
+                        <select id="anoTransicao" required>
+                            <option value="2026">2026 - Início da Transição</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                            <option value="2029">2029</option>
+                            <option value="2030">2030</option>
+                            <option value="2031">2031</option>
+                            <option value="2032">2032</option>
+                            <option value="2033">2033 - Regime Pleno</option>
+                        </select>
+                        <small>Período de implementação gradual</small>
+                    </div>
+                </div>
+
+                <h2 style="margin-top: 30px;">💰 Dados Financeiros Anuais</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Receita Bruta Anual (R$) <span class="required">*</span></label>
+                        <div class="input-icon">
+                            <input type="text" id="receitaBruta" placeholder="1.500.000,00" required>
+                        </div>
+                        <small>Faturamento total bruto anual</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Custos/Insumos Anuais (R$) <span class="required">*</span></label>
+                        <div class="input-icon">
+                            <input type="text" id="custosAnuais" placeholder="800.000,00" required>
+                        </div>
+                        <small>Para cálculo de créditos tributários</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>% de Créditos Aproveitáveis <span class="required">*</span></label>
+                        <input type="number" id="percentualCreditos" value="70" min="0" max="100" step="1" required>
+                        <small>Percentual dos insumos que geram crédito (padrão: 70%)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Margem de Lucro (%) <span class="required">*</span></label>
+                        <input type="number" id="margemLucro" placeholder="20" min="0" max="100" step="0.1" required>
+                        <small>Margem líquida sobre receita bruta</small>
+                    </div>
+                </div>
+
+                <div class="error-message" id="errorMessage"></div>
+
+                <button type="submit" class="btn-primary">
+                    🔮 Calcular Impacto da Reforma
+                </button>
+            </form>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="color: white; font-size: 1.2em; font-weight: 600;">Processando simulação...</p>
+        </div>
+
+        <div class="results" id="results">
+            <div class="card">
+                <h2>📊 Resultados da Simulação</h2>
+
+                <div class="alert alert-info">
+                    <h4>ℹ️ Dados da Empresa</h4>
+                    <p><strong>Empresa:</strong> <span id="resultNomeEmpresa"></span></p>
+                    <p><strong>Sócio:</strong> <span id="resultNomeSocio"></span></p>
+                    <p><strong>Email:</strong> <span id="resultEmail"></span></p>
+                    <p><strong>Setor:</strong> <span id="resultSetor"></span></p>
+                    <p><strong>Ano de Transição:</strong> <span id="resultAno"></span></p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Receita Bruta Anual</h3>
+                        <div class="stat-value" id="statReceita">R$ 0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Custos/Insumos</h3>
+                        <div class="stat-value" id="statCustos">R$ 0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Margem de Lucro</h3>
+                        <div class="stat-value" id="statMargem">0%</div>
+                    </div>
+                    <div class="stat-card highlight">
+                        <h3>Alíquota Efetiva Nova</h3>
+                        <div class="stat-value" id="statAliquotaEfetiva">0%</div>
+                        <div class="stat-label">Considerando créditos</div>
+                    </div>
+                </div>
+
+                <div class="comparison-section">
+                    <div class="comparison-box sistema-antigo">
+                        <h3>📉 Sistema Atual</h3>
+                        <p style="opacity: 0.9;">PIS + COFINS + ICMS + ISS</p>
+                        <div class="valor-destaque" id="valorSistemaAtual">R$ 0,00</div>
+
+                        <div class="breakdown">
+                            <div class="breakdown-item">
+                                <span>PIS:</span>
+                                <span id="detalhePIS">R$ 0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span>COFINS:</span>
+                                <span id="detalheCOFINS">R$ 0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span>ICMS:</span>
+                                <span id="detalheICMS">R$ 0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span>ISS:</span>
+                                <span id="detalheISS">R$ 0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span>TOTAL:</span>
+                                <span id="totalSistemaAtual">R$ 0</span>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 15px; font-size: 0.95em; opacity: 0.9;">
+                            <strong>Alíquota Efetiva:</strong> <span id="aliquotaAtual">0%</span>
+                        </div>
+                    </div>
+
+                    <div class="comparison-box sistema-novo">
+                        <h3>📈 Novo Sistema (Reforma)</h3>
+                        <p style="opacity: 0.9;">CBS + IBS (com créditos)</p>
+                        <div class="valor-destaque" id="valorSistemaNovo">R$ 0,00</div>
+
+                        <div class="breakdown">
+                            <div class="breakdown-item">
+                                <span>CBS (Federal):</span>
+                                <span id="detalheCBS">R$ 0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span>IBS (Estados/Municípios):</span>
+                                <span id="detalheIBS">R$ 0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span>Débito Bruto:</span>
+                                <span id="debitoBruto">R$ 0</span>
+                            </div>
+                            <div class="breakdown-item" style="color: #4caf50;">
+                                <span>(-) Créditos:</span>
+                                <span id="creditosTotal">R$ 0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span>TOTAL LÍQUIDO:</span>
+                                <span id="totalSistemaNovo">R$ 0</span>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 15px; font-size: 0.95em; opacity: 0.9;">
+                            <strong>Alíquota Nominal:</strong> <span id="aliquotaNominal">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="creditos-section">
+                    <h4>💳 Detalhamento dos Créditos Tributários</h4>
+                    <div class="credito-item">
+                        <span class="credito-label">Base de Cálculo dos Créditos:</span>
+                        <span class="credito-valor" id="baseCreditos">R$ 0</span>
+                    </div>
+                    <div class="credito-item">
+                        <span class="credito-label">Alíquota sobre Insumos:</span>
+                        <span class="credito-valor" id="aliquotaInsumos">0%</span>
+                    </div>
+                    <div class="credito-item">
+                        <span class="credito-label">Percentual de Aproveitamento:</span>
+                        <span class="credito-valor" id="percAproveitamento">0%</span>
+                    </div>
+                    <div class="credito-item" style="background: #c8e6c9;">
+                        <span class="credito-label"><strong>Total de Créditos a Compensar:</strong></span>
+                        <span class="credito-valor" id="totalCreditosCompensa">R$ 0</span>
+                    </div>
+                </div>
+
+                <div class="stat-card" id="economiaCard" style="margin: 30px 0;">
+                    <h3 id="economiaLabel">IMPACTO DA REFORMA</h3>
+                    <div class="stat-value" id="economiaValor">R$ 0</div>
+                    <div class="stat-label" id="economiaPercentual">0%</div>
+                    <p style="margin-top: 15px; font-weight: 600;" id="economiaTexto"></p>
+                </div>
+
+                <div class="chart-container">
+                    <h3>📊 Comparação Visual de Carga Tributária</h3>
+                    <div class="bar-chart">
+                        <div class="bar-wrapper">
+                            <div class="bar" id="barAtual" style="background: linear-gradient(to top, #f093fb, #f5576c);">
+                                <div class="bar-value" id="barAtualValue">R$ 0</div>
+                            </div>
+                            <div class="bar-label">Sistema Atual</div>
+                        </div>
+                        <div class="bar-wrapper">
+                            <div class="bar" id="barNovo" style="background: linear-gradient(to top, #4facfe, #00f2fe);">
+                                <div class="bar-value" id="barNovoValue">R$ 0</div>
+                            </div>
+                            <div class="bar-label">Novo Sistema</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <h3 style="color: #4527A0; margin: 30px 0 20px; font-size: 1.5em;">📝 Resumo Comparativo</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th>Sistema Atual</th>
+                                <th>Novo Sistema</th>
+                                <th>Diferença</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaComparativa">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="alert alert-warning">
+                    <h4>⚠️ Observações Importantes</h4>
+                    <ul>
+                        <li>Esta é uma <strong>simulação estimada</strong> baseada na LC 214/2025 e informações públicas disponíveis</li>
+                        <li>Os valores reais podem variar conforme regulamentação específica e características da sua operação</li>
+                        <li>A <strong>transição será gradual</strong> entre 2026 e 2033, com coexistência dos dois sistemas</li>
+                        <li>O aproveitamento de créditos depende de diversos fatores operacionais e fiscais</li>
+                        <li>Consulte um <strong>contador ou advogado tributarista</strong> para análise detalhada e personalizada</li>
+                        <li>Alíquotas específicas podem ser ajustadas conforme regulamentação final</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <h4>📚 Sobre o Novo Sistema</h4>
+                    <p><strong>CBS (Contribuição sobre Bens e Serviços):</strong> Substitui PIS e COFINS a nível federal. Alíquota estimada: 8,5%</p>
+                    <p style="margin-top: 10px;"><strong>IBS (Imposto sobre Bens e Serviços):</strong> Substitui ICMS e ISS, gerido por Estados e Municípios. Alíquota estimada: 17,5%</p>
+                    <p style="margin-top: 10px;"><strong>Total Padrão:</strong> 26,5% (CBS + IBS) com sistema de créditos não-cumulativos</p>
+                    <p style="margin-top: 10px;"><strong>Benefício Principal:</strong> Simplificação tributária e crédito integral sobre insumos, reduzindo efeito cascata</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configurações de setores
+        const configuracaoSetores = {
+            geral: { aliquota: 26.5, reducao: 0, nome: 'Geral - Alíquota Padrão' },
+            saude: { aliquota: 10.6, reducao: 60, nome: 'Saúde - Redução de 60%' },
+            educacao: { aliquota: 10.6, reducao: 60, nome: 'Educação - Redução de 60%' },
+            alimentos: { aliquota: 10.6, reducao: 60, nome: 'Alimentos Básicos - Redução de 60%' },
+            transporte: { aliquota: 13.25, reducao: 50, nome: 'Transporte Público - Redução de 50%' },
+            industria: { aliquota: 26.5, reducao: 0, nome: 'Indústria' },
+            servicos: { aliquota: 26.5, reducao: 0, nome: 'Serviços' },
+            comercio: { aliquota: 26.5, reducao: 0, nome: 'Comércio' },
+            tecnologia: { aliquota: 23.85, reducao: 10, nome: 'Tecnologia - Redução de 10%' },
+            construcao: { aliquota: 26.5, reducao: 0, nome: 'Construção Civil' }
+        };
+
+        const icmsPorEstado = {
+            'SP': 18, 'RJ': 18, 'MG': 18, 'RS': 17, 'PR': 18,
+            'SC': 17, 'BA': 18, 'PE': 18, 'CE': 18, 'GO': 17,
+            'DF': 18, 'outros': 17
+        };
+
+        // Formatação
+        function formatarMoeda(valor) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2
+            }).format(valor);
+        }
+
+        function formatarMoedaSimples(valor) {
+            if (valor >= 1000000) {
+                return 'R$ ' + (valor / 1000000).toFixed(1) + 'M';
+            } else if (valor >= 1000) {
+                return 'R$ ' + (valor / 1000).toFixed(0) + 'k';
+            }
+            return formatarMoeda(valor);
+        }
+
+        function formatarPercentual(valor) {
+            return valor.toFixed(2) + '%';
+        }
+
+        function parseMoeda(valor) {
+            if (!valor) return 0;
+            const numero = valor.replace(/\./g, '').replace(',', '.').replace(/[^\d.]/g, '');
+            return parseFloat(numero) || 0;
+        }
+
+        // Máscaras
+        function mascaraCNPJ(valor) {
+            return valor
+                .replace(/\D/g, '')
+                .replace(/(\d{2})(\d)/, '$1.$2')
+                .replace(/(\d{3})(\d)/, '$1.$2')
+                .replace(/(\d{3})(\d)/, '$1/$2')
+                .replace(/(\d{4})(\d)/, '$1-$2')
+                .replace(/(-\d{2})\d+?$/, '$1');
+        }
+
+        function mascaraCPF(valor) {
+            return valor
+                .replace(/\D/g, '')
+                .replace(/(\d{3})(\d)/, '$1.$2')
+                .replace(/(\d{3})(\d)/, '$1.$2')
+                .replace(/(\d{3})(\d)/, '$1-$2')
+                .replace(/(-\d{2})\d+?$/, '$1');
+        }
+
+        function mascaraTelefone(valor) {
+            return valor
+                .replace(/\D/g, '')
+                .replace(/(\d{2})(\d)/, '($1) $2')
+                .replace(/(\d{5})(\d)/, '$1-$2')
+                .replace(/(-\d{4})\d+?$/, '$1');
+        }
+
+        function mascaraMoeda(valor) {
+            valor = valor.replace(/\D/g, '');
+            valor = (parseInt(valor) / 100).toFixed(2);
+            valor = valor.replace('.', ',');
+            valor = valor.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+            return valor;
+        }
+
+        // Aplicar máscaras
+        document.getElementById('cnpj').addEventListener('input', (e) => {
+            e.target.value = mascaraCNPJ(e.target.value);
+        });
+
+        document.getElementById('cpfSocio').addEventListener('input', (e) => {
+            e.target.value = mascaraCPF(e.target.value);
+        });
+
+        document.getElementById('telefone').addEventListener('input', (e) => {
+            e.target.value = mascaraTelefone(e.target.value);
+        });
+
+        document.getElementById('receitaBruta').addEventListener('input', (e) => {
+            e.target.value = mascaraMoeda(e.target.value);
+        });
+
+        document.getElementById('custosAnuais').addEventListener('input', (e) => {
+            e.target.value = mascaraMoeda(e.target.value);
+        });
+
+        // Cálculo Sistema Atual
+        function calcularSistemaAtual(receita, regime, estado, setor) {
+            let pis, cofins, icms, iss;
+
+            // PIS e COFINS
+            if (regime === 'simples') {
+                pis = receita * 0.0038;
+                cofins = receita * 0.0142;
+            } else if (regime === 'presumido') {
+                pis = receita * 0.0065;
+                cofins = receita * 0.03;
+            } else {
+                pis = receita * 0.0165;
+                cofins = receita * 0.076;
+            }
+
+            // ICMS
+            const aliquotaICMS = icmsPorEstado[estado] || 17;
+            icms = receita * (aliquotaICMS / 100);
+
+            // ISS
+            if (['servicos', 'tecnologia', 'saude', 'educacao'].includes(setor)) {
+                iss = receita * 0.05;
+            } else {
+                iss = 0;
+            }
+
+            const total = pis + cofins + icms + iss;
+
+            return { pis, cofins, icms, iss, total, aliquotaEfetiva: (total / receita) * 100 };
+        }
+
+        // Cálculo Novo Sistema
+        function calcularNovoSistema(receita, custos, setor, percentualCreditos) {
+            const config = configuracaoSetores[setor];
+            const aliquotaTotal = config.aliquota;
+            const aliquotaCBS = aliquotaTotal * 0.327; // ~8.5%
+            const aliquotaIBS = aliquotaTotal * 0.673; // ~17.5%
+
+            // Débitos
+            const debitoCBS = receita * (aliquotaCBS / 100);
+            const debitoIBS = receita * (aliquotaIBS / 100);
+            const debitoTotal = debitoCBS + debitoIBS;
+
+            // Créditos sobre insumos
+            const baseCreditos = custos * (percentualCreditos / 100);
+            const creditoCBS = baseCreditos * (aliquotaCBS / 100);
+            const creditoIBS = baseCreditos * (aliquotaIBS / 100);
+            const creditoTotal = creditoCBS + creditoIBS;
+
+            // Total líquido
+            const totalLiquido = debitoTotal - creditoTotal;
+            const aliquotaEfetiva = (totalLiquido / receita) * 100;
+
+            return {
+                aliquotaNominal: aliquotaTotal,
+                aliquotaCBS,
+                aliquotaIBS,
+                debitoCBS,
+                debitoIBS,
+                debitoTotal,
+                creditoCBS,
+                creditoIBS,
+                creditoTotal,
+                baseCreditos,
+                totalLiquido,
+                aliquotaEfetiva,
+                nomeSetor: config.nome
+            };
+        }
+
+        // Submissão do formulário
+        document.getElementById('simuladorForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Validação
+            const errorMsg = document.getElementById('errorMessage');
+            errorMsg.classList.remove('show');
+
+            const nomeEmpresa = document.getElementById('nomeEmpresa').value;
+            const nomeSocio = document.getElementById('nomeSocio').value;
+            const cpfSocio = document.getElementById('cpfSocio').value;
+            const telefone = document.getElementById('telefone').value;
+            const email = document.getElementById('email').value;
+            const regime = document.getElementById('regimeTributario').value;
+            const setor = document.getElementById('setor').value;
+            const estado = document.getElementById('estado').value;
+            const anoTransicao = document.getElementById('anoTransicao').value;
+
+            const receita = parseMoeda(document.getElementById('receitaBruta').value);
+            const custos = parseMoeda(document.getElementById('custosAnuais').value);
+            const percentualCreditos = parseFloat(document.getElementById('percentualCreditos').value);
+            const margemLucro = parseFloat(document.getElementById('margemLucro').value);
+
+            if (!nomeEmpresa || !nomeSocio || !cpfSocio || !telefone || !email || !regime || !setor || !estado) {
+                errorMsg.textContent = '❌ Por favor, preencha todos os campos obrigatórios.';
+                errorMsg.classList.add('show');
+                return;
+            }
+
+            if (receita <= 0 || custos < 0) {
+                errorMsg.textContent = '❌ Receita deve ser maior que zero e custos não podem ser negativos.';
+                errorMsg.classList.add('show');
+                return;
+            }
+
+            // Mostrar loading
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('results').classList.remove('show');
+
+            setTimeout(() => {
+                // Calcular
+                const sistemaAtual = calcularSistemaAtual(receita, regime, estado, setor);
+                const sistemaNovo = calcularNovoSistema(receita, custos, setor, percentualCreditos);
+
+                // Economia/Aumento
+                const diferenca = sistemaAtual.total - sistemaNovo.totalLiquido;
+                const percentualDiferenca = (diferenca / sistemaAtual.total) * 100;
+
+                // Preencher dados da empresa
+                document.getElementById('resultNomeEmpresa').textContent = nomeEmpresa;
+                document.getElementById('resultNomeSocio').textContent = nomeSocio;
+                document.getElementById('resultEmail').textContent = email;
+                document.getElementById('resultSetor').textContent = sistemaNovo.nomeSetor;
+                document.getElementById('resultAno').textContent = anoTransicao;
+
+                // Stats
+                document.getElementById('statReceita').textContent = formatarMoeda(receita);
+                document.getElementById('statCustos').textContent = formatarMoeda(custos);
+                document.getElementById('statMargem').textContent = margemLucro.toFixed(1) + '%';
+                document.getElementById('statAliquotaEfetiva').textContent = formatarPercentual(sistemaNovo.aliquotaEfetiva);
+
+                // Sistema Atual
+                document.getElementById('valorSistemaAtual').textContent = formatarMoeda(sistemaAtual.total);
+                document.getElementById('detalhePIS').textContent = formatarMoeda(sistemaAtual.pis);
+                document.getElementById('detalheCOFINS').textContent = formatarMoeda(sistemaAtual.cofins);
+                document.getElementById('detalheICMS').textContent = formatarMoeda(sistemaAtual.icms);
+                document.getElementById('detalheISS').textContent = formatarMoeda(sistemaAtual.iss);
+                document.getElementById('totalSistemaAtual').textContent = formatarMoeda(sistemaAtual.total);
+                document.getElementById('aliquotaAtual').textContent = formatarPercentual(sistemaAtual.aliquotaEfetiva);
+
+                // Sistema Novo
+                document.getElementById('valorSistemaNovo').textContent = formatarMoeda(sistemaNovo.totalLiquido);
+                document.getElementById('detalheCBS').textContent = formatarMoeda(sistemaNovo.debitoCBS);
+                document.getElementById('detalheIBS').textContent = formatarMoeda(sistemaNovo.debitoIBS);
+                document.getElementById('debitoBruto').textContent = formatarMoeda(sistemaNovo.debitoTotal);
+                document.getElementById('creditosTotal').textContent = formatarMoeda(sistemaNovo.creditoTotal);
+                document.getElementById('totalSistemaNovo').textContent = formatarMoeda(sistemaNovo.totalLiquido);
+                document.getElementById('aliquotaNominal').textContent = formatarPercentual(sistemaNovo.aliquotaNominal);
+
+                // Créditos
+                document.getElementById('baseCreditos').textContent = formatarMoeda(sistemaNovo.baseCreditos);
+                document.getElementById('aliquotaInsumos').textContent = formatarPercentual(sistemaNovo.aliquotaNominal);
+                document.getElementById('percAproveitamento').textContent = percentualCreditos.toFixed(0) + '%';
+                document.getElementById('totalCreditosCompensa').textContent = formatarMoeda(sistemaNovo.creditoTotal);
+
+                // Economia
+                const economiaCard = document.getElementById('economiaCard');
+                if (diferenca > 0) {
+                    economiaCard.className = 'stat-card success';
+                    document.getElementById('economiaLabel').textContent = '💰 ECONOMIA COM A REFORMA';
+                    document.getElementById('economiaTexto').textContent = 'Redução da carga tributária';
+                } else {
+                    economiaCard.className = 'stat-card danger';
+                    document.getElementById('economiaLabel').textContent = '⚠️ AUMENTO COM A REFORMA';
+                    document.getElementById('economiaTexto').textContent = 'Aumento da carga tributária';
+                }
+                document.getElementById('economiaValor').textContent = formatarMoeda(Math.abs(diferenca));
+                document.getElementById('economiaPercentual').textContent = formatarPercentual(Math.abs(percentualDiferenca));
+
+                // Gráfico
+                const maxValor = Math.max(sistemaAtual.total, sistemaNovo.totalLiquido);
+                const alturaAtual = (sistemaAtual.total / maxValor) * 100;
+                const alturaNovo = (sistemaNovo.totalLiquido / maxValor) * 100;
+
+                document.getElementById('barAtual').style.height = alturaAtual + '%';
+                document.getElementById('barNovo').style.height = alturaNovo + '%';
+                document.getElementById('barAtualValue').textContent = formatarMoedaSimples(sistemaAtual.total);
+                document.getElementById('barNovoValue').textContent = formatarMoedaSimples(sistemaNovo.totalLiquido);
+
+                // Tabela Comparativa
+                const tabela = document.getElementById('tabelaComparativa');
+                tabela.innerHTML = `
+                    <tr>
+                        <td><strong>Carga Tributária Total</strong></td>
+                        <td>${formatarMoeda(sistemaAtual.total)}</td>
+                        <td>${formatarMoeda(sistemaNovo.totalLiquido)}</td>
+                        <td style="color: ${diferenca > 0 ? '#28a745' : '#dc3545'}; font-weight: 700;">
+                            ${diferenca > 0 ? '-' : '+'} ${formatarMoeda(Math.abs(diferenca))}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Alíquota Efetiva</strong></td>
+                        <td>${formatarPercentual(sistemaAtual.aliquotaEfetiva)}</td>
+                        <td>${formatarPercentual(sistemaNovo.aliquotaEfetiva)}</td>
+                        <td style="color: ${diferenca > 0 ? '#28a745' : '#dc3545'}; font-weight: 700;">
+                            ${diferenca > 0 ? '-' : '+'} ${formatarPercentual(Math.abs(sistemaAtual.aliquotaEfetiva - sistemaNovo.aliquotaEfetiva))}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>PIS + COFINS vs CBS</td>
+                        <td>${formatarMoeda(sistemaAtual.pis + sistemaAtual.cofins)}</td>
+                        <td>${formatarMoeda(sistemaNovo.debitoCBS - sistemaNovo.creditoCBS)}</td>
+                        <td>${formatarMoeda((sistemaAtual.pis + sistemaAtual.cofins) - (sistemaNovo.debitoCBS - sistemaNovo.creditoCBS))}</td>
+                    </tr>
+                    <tr>
+                        <td>ICMS + ISS vs IBS</td>
+                        <td>${formatarMoeda(sistemaAtual.icms + sistemaAtual.iss)}</td>
+                        <td>${formatarMoeda(sistemaNovo.debitoIBS - sistemaNovo.creditoIBS)}</td>
+                        <td>${formatarMoeda((sistemaAtual.icms + sistemaAtual.iss) - (sistemaNovo.debitoIBS - sistemaNovo.creditoIBS))}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Créditos Aproveitados</strong></td>
+                        <td style="color: #999;">Não aplicável</td>
+                        <td style="color: #28a745; font-weight: 700;">${formatarMoeda(sistemaNovo.creditoTotal)}</td>
+                        <td style="color: #28a745; font-weight: 700;">+ ${formatarMoeda(sistemaNovo.creditoTotal)}</td>
+                    </tr>
+                `;
+
+                // Esconder loading e mostrar resultados
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('results').classList.add('show');
+
+                // Scroll para resultados
+                document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 1200);
+        });
+
+        // =====================================================
+        // PARTÍCULAS ANIMADAS (Estilo Bumerangue)
+        // =====================================================
+        (function() {
+            const canvas = document.getElementById('particles-canvas');
+            const ctx = canvas.getContext('2d');
+
+            let particles = [];
+            let mouseX = 0;
+            let mouseY = 0;
+
+            // Configurar canvas
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                initParticles();
+            }
+
+            // Partícula
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.size = Math.random() * 1.4 + 0.6;
+                    this.speedX = Math.random() * 0.5 - 0.25;
+                    this.speedY = Math.random() * 0.5 - 0.25;
+                }
+
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+
+                    // Wraparound nas bordas
+                    if (this.x > canvas.width) this.x = 0;
+                    if (this.x < 0) this.x = canvas.width;
+                    if (this.y > canvas.height) this.y = 0;
+                    if (this.y < 0) this.y = canvas.height;
+
+                    // Fugir do mouse
+                    const dx = mouseX - this.x;
+                    const dy = mouseY - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        const angle = Math.atan2(dy, dx);
+                        this.x -= Math.cos(angle) * 1;
+                        this.y -= Math.sin(angle) * 1;
+                    }
+                }
+
+                draw() {
+                    ctx.fillStyle = '#9CDD00'; // Verde limão Bumerangue
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // Inicializar partículas
+            function initParticles() {
+                particles = [];
+                const particleCount = 100;
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push(new Particle());
+                }
+            }
+
+            // Animar
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                particles.forEach(particle => {
+                    particle.update();
+                    particle.draw();
+                });
+
+                requestAnimationFrame(animate);
+            }
+
+            // Mouse tracking
+            document.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            // Iniciar
+            resizeCanvas();
+            animate();
+
+            // Resize
+            window.addEventListener('resize', resizeCanvas);
+        })();
+    </script>
+</body>
+</html>
